@@ -1,0 +1,9 @@
+.next
+node_modules
+.git
+*.db
+*.db-shm
+*.db-wal
+uploads
+.env*
+README.md

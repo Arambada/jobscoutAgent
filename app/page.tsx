@@ -1,101 +1,194 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useCallback, useEffect, useState } from "react";
+import type { Job, Run } from "@/lib/types";
+import JobCard from "@/components/JobCard";
+import AgentRunBanner from "@/components/AgentRunBanner";
+import RescoreButton from "@/components/RescoreButton";
+import SearchTriggerButton from "@/components/SearchTriggerButton";
+
+type Tab = "all" | "new" | "saved" | "applied" | "interviewing" | "skipped";
+
+interface Stats {
+  total: number;
+  new_today: number | null;
+  unseen: number | null;
+  applied: number | null;
+  interviewing: number | null;
+}
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "new", label: "New" },
+  { key: "saved", label: "Saved" },
+  { key: "applied", label: "Applied" },
+  { key: "interviewing", label: "Interviewing" },
+  { key: "skipped", label: "Not applying" },
+];
+
+export default function Dashboard() {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [lastRun, setLastRun] = useState<Run | null>(null);
+  const [running, setRunning] = useState(false);
+  const [tab, setTab] = useState<Tab>("all");
+  const [minScore, setMinScore] = useState(0);
+  const [remoteOnly, setRemoteOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<"score" | "newest">("score");
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (tab === "new") params.set("unseen", "1");
+    else if (tab !== "all") params.set("status", tab);
+    if (minScore > 0) params.set("minScore", String(minScore));
+    if (remoteOnly) params.set("remote", "1");
+
+    const [jobsRes, runsRes] = await Promise.all([
+      fetch(`/api/jobs?${params}`),
+      fetch("/api/runs"),
+    ]);
+    const jobsData = await jobsRes.json();
+    const runsData = await runsRes.json();
+    setJobs(jobsData.jobs ?? []);
+    setStats(jobsData.stats ?? null);
+    setLastRun(runsData.runs?.[0] ?? null);
+    setRunning(!!runsData.running);
+    setLoading(false);
+  }, [tab, minScore, remoteOnly]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // Light polling so scheduled runs show up without a refresh
+  useEffect(() => {
+    const t = setInterval(load, 30000);
+    return () => clearInterval(t);
+  }, [load]);
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-zinc-900">Dashboard</h1>
+          <AgentRunBanner lastRun={lastRun} running={running} />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div className="flex items-center gap-2">
+          <RescoreButton onComplete={load} />
+          <SearchTriggerButton onComplete={load} />
+        </div>
+      </div>
+
+      {/* Stats row */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { label: "Total jobs", value: stats?.total ?? 0 },
+          { label: "New today", value: stats?.new_today ?? 0 },
+          { label: "Applied", value: stats?.applied ?? 0 },
+          { label: "Interviews", value: stats?.interviewing ?? 0 },
+        ].map((s) => (
+          <div key={s.label} className="rounded-xl border border-zinc-200 bg-white p-4">
+            <p className="text-2xl font-bold tabular-nums text-zinc-900">{s.value}</p>
+            <p className="text-xs text-zinc-500">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Tabs + filters */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex rounded-lg border border-zinc-200 bg-white p-1">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                tab === t.key
+                  ? "bg-zinc-900 text-white"
+                  : "text-zinc-600 hover:text-zinc-900"
+              }`}
+            >
+              {t.label}
+              {t.key === "new" && (stats?.unseen ?? 0) > 0 && (
+                <span className="ml-1.5 rounded-full bg-blue-500 px-1.5 text-[10px] text-white">
+                  {stats?.unseen}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-4 text-xs text-zinc-600">
+          <label className="flex items-center gap-2">
+            Sort
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as "score" | "newest")}
+              className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs"
+            >
+              <option value="score">Highest score</option>
+              <option value="newest">Newest first</option>
+            </select>
+          </label>
+          <label className="flex items-center gap-2">
+            Min score
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={minScore}
+              onChange={(e) => setMinScore(parseInt(e.target.value, 10))}
+              className="accent-zinc-900"
+            />
+            <span className="w-6 font-semibold tabular-nums">{minScore}</span>
+          </label>
+          <label className="flex items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={remoteOnly}
+              onChange={(e) => setRemoteOnly(e.target.checked)}
+              className="accent-zinc-900"
+            />
+            Remote
+          </label>
+        </div>
+      </div>
+
+      {/* Score explainer */}
+      <p className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-2.5 text-xs leading-relaxed text-blue-900">
+        <strong>What the scores mean:</strong> each job gets an AI gap analysis
+        against your uploaded CV (strong matches, partial matches, gaps), and
+        the 0–100 score comes from that — open any job to see the full
+        breakdown. Roughly: 70+ strong match worth applying to, 50–69 credible
+        but with real gaps, below 50 probably noise. Scores also decide which
+        jobs get emailed to you. Changed your CV or profile? Hit “Re-score”
+        above.
+      </p>
+
+      {/* Job list */}
+      {loading ? (
+        <p className="py-12 text-center text-sm text-zinc-400">Loading…</p>
+      ) : jobs.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-zinc-300 bg-white py-16 text-center">
+          <p className="text-sm font-medium text-zinc-600">No jobs here yet</p>
+          <p className="mt-1 text-xs text-zinc-400">
+            Set your preferences in Settings, then hit “Run now” to search for jobs.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[...jobs]
+            .sort((a, b) =>
+              sortBy === "score"
+                ? b.score - a.score
+                : new Date(b.discovered_at).getTime() - new Date(a.discovered_at).getTime(),
+            )
+            .map((job) => (
+              <JobCard key={job.id} job={job} onChanged={load} />
+            ))}
+        </div>
+      )}
     </div>
   );
 }
