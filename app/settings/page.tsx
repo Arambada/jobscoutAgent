@@ -61,7 +61,7 @@ export default function SettingsPage() {
     setBusy(false);
     setSavedMsg(
       prefData.cleared > 0
-        ? `Settings saved ✓ — cleared ${prefData.cleared} jobs from the old search; hit "Search now" to repopulate`
+        ? `Settings saved ✓ — cleared ${prefData.cleared} jobs from the old search; click "Run now" on the dashboard to repopulate`
         : "Settings saved ✓",
     );
     setTimeout(() => setSavedMsg(null), 6000);
