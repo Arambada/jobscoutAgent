@@ -10,6 +10,9 @@ const SOURCE_LABELS: Record<string, string> = {
   nhs: "NHS Jobs",
   remotive: "Remotive",
   jsearch: "Google Jobs",
+  greenhouse: "Greenhouse",
+  lever: "Lever",
+  ashby: "Ashby",
 };
 
 export default function JobCard({

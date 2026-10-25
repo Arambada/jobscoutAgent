@@ -6,6 +6,9 @@ A **personal job search agent** that works while you don't. On a schedule it sea
 
 ![Next.js](https://img.shields.io/badge/Next.js-14-black) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue) ![Postgres](https://img.shields.io/badge/Postgres-16-336791) ![Claude](https://img.shields.io/badge/Claude-Sonnet_%2B_Haiku-orange)
 
+![Job Scout dashboard — scored jobs from multiple sources, with status filters and run summary](docs/dashboard.png)
+<sub>Dashboard shown with sample data.</sub>
+
 ---
 
 ## Features
