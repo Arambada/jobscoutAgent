@@ -10,6 +10,8 @@ import { searchReed, reedEnabled } from "./sources/reed";
 import { searchRemotive } from "./sources/remotive";
 import { searchJSearch, jsearchEnabled } from "./sources/jsearch";
 import { searchNhs } from "./sources/nhs";
+import { searchAts, atsEnabled } from "./sources/ats";
+import { companyMatches, expandTargetCompanies } from "./companies";
 
 interface SourceDef {
   name: string;
@@ -28,7 +30,10 @@ export interface MultiSearchResult {
 }
 
 export async function searchAllSources(prefs: Preferences): Promise<MultiSearchResult> {
+  // Employer ATS boards go first so their direct-apply listings win the
+  // title+company de-dupe against the same vacancy on an aggregator.
   const sources: SourceDef[] = [
+    { name: "ats", enabled: atsEnabled(), search: searchAts },
     { name: "adzuna", enabled: !!(process.env.ADZUNA_APP_ID && process.env.ADZUNA_APP_KEY), search: searchAdzuna },
     { name: "reed", enabled: reedEnabled(), search: searchReed },
     { name: "remotive", enabled: true, search: searchRemotive },
@@ -66,5 +71,12 @@ export async function searchAllSources(prefs: Preferences): Promise<MultiSearchR
     perSource[name] = kept;
   });
 
-  return { results: merged, perSource, errors };
+  // Employer allowlist: when target_companies is set, only listings from a
+  // matching employer survive. Applied post-search (rather than per-source
+  // query) since most job APIs can't filter by company name server-side.
+  const targets = expandTargetCompanies(prefs.target_companies ?? "");
+  const filtered =
+    targets.length > 0 ? merged.filter((job) => companyMatches(job.company, targets)) : merged;
+
+  return { results: filtered, perSource, errors };
 }

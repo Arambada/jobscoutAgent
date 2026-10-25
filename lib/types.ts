@@ -51,6 +51,7 @@ export interface Preferences {
   job_title: string;
   location: string;
   keywords: string;
+  target_companies: string;
   remote_only: boolean;
   permanent_only: boolean;
   search_interval_hours: number;
@@ -107,7 +108,7 @@ export type ApplicationStatus =
   | "interview"
   | "offer";
 
-export type Platform = "linkedin" | "indeed" | "greenhouse" | "lever" | "manual";
+export type Platform = "linkedin" | "indeed" | "greenhouse" | "lever" | "ashby" | "manual";
 
 export interface ApplicationAnswer {
   question: string;

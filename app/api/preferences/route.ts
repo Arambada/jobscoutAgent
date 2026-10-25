@@ -27,15 +27,18 @@ export async function PUT(request: NextRequest) {
   await sql`
     UPDATE preferences SET
       job_title             = ${typeof body.job_title === "string" ? body.job_title.trim() : ""},
-      location              = ${typeof body.location === "string" ? body.location.trim() : ""},
-      keywords              = ${typeof body.keywords === "string" ? body.keywords.trim() : ""},
-      remote_only           = ${!!body.remote_only},
-      permanent_only        = ${!!body.permanent_only},
-      search_interval_hours = ${intervalHours},
-      min_score_to_email    = ${minScore},
-      updated_at            = NOW()
+      location               = ${typeof body.location === "string" ? body.location.trim() : ""},
+      keywords               = ${typeof body.keywords === "string" ? body.keywords.trim() : ""},
+      target_companies       = ${typeof body.target_companies === "string" ? body.target_companies.trim() : ""},
+      remote_only            = ${!!body.remote_only},
+      permanent_only         = ${!!body.permanent_only},
+      search_interval_hours  = ${intervalHours},
+      min_score_to_email     = ${minScore},
+      updated_at             = NOW()
     WHERE id = 1
   `;
+
+  const newCompanies = typeof body.target_companies === "string" ? body.target_companies.trim() : "";
 
   if (intervalHours !== current.search_interval_hours && !process.env.SEARCH_CRON) {
     await restartScheduler();
@@ -50,7 +53,8 @@ export async function PUT(request: NextRequest) {
   const newLocation = body.location.trim();
   const targetChanged =
     (newTitle !== current.job_title && newTitle !== "") ||
-    (newLocation !== current.location && newLocation !== "");
+    (newLocation !== current.location && newLocation !== "") ||
+    (newCompanies !== (current.target_companies ?? "") && newCompanies !== "");
   if (targetChanged) {
     const result = await sql`DELETE FROM jobs WHERE status = 'new'`;
     cleared = result.count;

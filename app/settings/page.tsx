@@ -2,6 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Cv, Preferences, Profile } from "@/lib/types";
+import { COMPANY_GROUPS } from "@/lib/companies";
+
+const COMPANY_GROUP_LABELS: Record<string, string> = {
+  "bulge bracket": "Bulge bracket banks",
+  "asset managers": "Asset managers",
+  "hedge funds": "Hedge funds",
+  "big 4": "Big 4",
+  "mbb consulting": "MBB consulting",
+  "top consulting": "Top consulting",
+  "top banking": "Top banking",
+  "top finance": "Top finance",
+};
 
 const inputClass =
   "mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none";
@@ -179,8 +191,41 @@ export default function SettingsPage() {
               placeholder="e.g. TypeScript, Next.js, fintech"
             />
           </label>
+          <label className="text-xs font-medium text-zinc-600 sm:col-span-2">
+            Target companies
+            <input
+              className={inputClass}
+              value={prefs.target_companies}
+              onChange={(e) => setPrefs({ ...prefs, target_companies: e.target.value })}
+              placeholder="e.g. Goldman Sachs, Morgan Stanley, Invesco, EY, PwC, top consulting"
+            />
+            <span className="mt-1 block font-normal text-zinc-400">
+              Only listings from a matching employer are kept. Leave blank to search all companies.
+              Click a group below to add it, or type company names directly.
+            </span>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {Object.keys(COMPANY_GROUPS).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => {
+                    const existing = prefs.target_companies
+                      .split(/[,\n]/)
+                      .map((t) => t.trim())
+                      .filter(Boolean);
+                    if (existing.some((t) => t.toLowerCase() === key)) return;
+                    const next = [...existing, key].join(", ");
+                    setPrefs({ ...prefs, target_companies: next });
+                  }}
+                  className="rounded-full border border-zinc-300 bg-zinc-50 px-2.5 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
+                >
+                  + {COMPANY_GROUP_LABELS[key] ?? key}
+                </button>
+              ))}
+            </div>
+          </label>
           <label className="text-xs font-medium text-zinc-600">
-            Search every (hours)
+            Search every (hours, from 08:00)
             <input
               type="number"
               min={1}

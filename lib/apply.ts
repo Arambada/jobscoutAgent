@@ -29,6 +29,7 @@ export function detectPlatform(url: string | null): Platform {
   if (url.includes("indeed.com")) return "indeed";
   if (url.includes("greenhouse.io")) return "greenhouse";
   if (url.includes("lever.co")) return "lever";
+  if (url.includes("ashbyhq.com")) return "ashby";
   return "manual";
 }
 

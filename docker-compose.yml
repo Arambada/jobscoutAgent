@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: jobscout
       POSTGRES_DB: jobscout
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -32,7 +32,8 @@ services:
     environment:
       DATABASE_URL: postgres://jobscout:jobscout@postgres:5432/jobscout
     ports:
-      - "3000:3000"
+      # Localhost only: the app has no login
+      - "127.0.0.1:3000:3000"
     volumes:
       # Persist uploaded CVs
       - ./uploads:/app/uploads

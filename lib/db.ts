@@ -1,4 +1,5 @@
 import postgres from "postgres";
+import { DEFAULT_TARGET_COMPANIES } from "./companies";
 
 // Singleton across Next.js dev-server HMR reloads
 const globalForDb = globalThis as unknown as { __jobScoutSql?: postgres.Sql };
@@ -115,8 +116,15 @@ export async function initDb(): Promise<void> {
   await sql`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS supporting_statement TEXT NOT NULL DEFAULT ''`;
   await sql`ALTER TABLE preferences ADD COLUMN IF NOT EXISTS permanent_only BOOLEAN NOT NULL DEFAULT false`;
   await sql`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS fit_analysis TEXT NOT NULL DEFAULT ''`;
+  await sql`ALTER TABLE preferences ADD COLUMN IF NOT EXISTS target_companies TEXT NOT NULL DEFAULT ''`;
 
-  // Seed singleton rows
-  await sql`INSERT INTO preferences (id) VALUES (1) ON CONFLICT (id) DO NOTHING`;
+
+  // Seed singleton rows — defaults point the search at Data/AI/ML roles inside
+  // banking, asset management and consulting employers, per the intended use case.
+  await sql`
+    INSERT INTO preferences (id, job_title, target_companies)
+    VALUES (1, 'Data Scientist, Data Engineer, Data Analyst, Machine Learning Engineer, AI Engineer', ${DEFAULT_TARGET_COMPANIES})
+    ON CONFLICT (id) DO NOTHING
+  `;
   await sql`INSERT INTO profile    (id) VALUES (1) ON CONFLICT (id) DO NOTHING`;
 }
